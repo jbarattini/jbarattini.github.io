@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Estate Ragazzi — Presenze</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --verde: #1a7a4a;
+  --verde2: #2ea869;
+  --verde-bg: #e8f5ee;
+  --arancio: #d4530a;
+  --arancio-bg: #fdf0e8;
+  --giallo: #f0b429;
+  --giallo-bg: #fffbea;
+  --testo: #1c1c1e;
+  --testo2: #6b7280;
+  --bordo: #e5e7eb;
+  --bg: #f0f4f2;
+  --card: #ffffff;
+  --radius: 18px;
+  --radius-sm: 12px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--testo); min-height: 100vh; }
+.header { background: var(--verde); padding: 52px 22px 28px; position: relative; overflow: hidden; }
+.header::before { content: ''; position: absolute; right: -40px; bottom: -40px; width: 160px; height: 160px; background: rgba(255,255,255,0.06); border-radius: 50%; }
+.header h1 { font-family: 'Sora', sans-serif; font-size: 24px; font-weight: 800; color: #fff; letter-spacing: -0.5px; }
+.header .sottotitolo { font-size: 14px; color: rgba(255,255,255,0.75); margin-top: 4px; }
+.header .data-badge { display: inline-block; background: rgba(255,255,255,0.15); color: #fff; font-size: 12px; font-weight: 500; padding: 5px 12px; border-radius: 20px; margin-top: 14px; }
+.nav-tabs { display: flex; background: var(--card); border-bottom: 1px solid var(--bordo); position: sticky; top: 0; z-index: 10; }
+.nav-tab { flex: 1; padding: 14px 8px; text-align: center; font-size: 13px; font-weight: 500; color: var(--testo2); cursor: pointer; border-bottom: 2.5px solid transparent; transition: all 0.18s; font-family: 'DM Sans', sans-serif; background: none; border-top: none; border-left: none; border-right: none; }
+.nav-tab.attivo { color: var(--verde); border-bottom-color: var(--verde); }
+.pagina { display: none; padding: 20px 18px 80px; max-width: 500px; margin: 0 auto; }
+.pagina.attiva { display: block; }
+.card { background: var(--card); border-radius: var(--radius); padding: 20px 18px; margin-bottom: 14px; border: 1px solid var(--bordo); }
+.card-label { font-size: 11px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; color: var(--testo2); margin-bottom: 12px; }
+.contatori-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.contatore { background: var(--card); border: 1px solid var(--bordo); border-radius: var(--radius-sm); padding: 16px 10px; text-align: center; }
+.contatore .num { font-family: 'Sora', sans-serif; font-size: 36px; font-weight: 800; color: var(--verde); line-height: 1; }
+.contatore.totale .num { color: var(--testo); font-size: 30px; }
+.contatore .label { font-size: 12px; color: var(--testo2); margin-top: 5px; font-weight: 500; }
+.avviso { display: none; background: var(--giallo-bg); border: 1.5px solid var(--giallo); border-radius: var(--radius-sm); padding: 14px 16px; font-size: 14px; color: #7a4f00; line-height: 1.5; margin-bottom: 14px; }
+.avviso.visibile { display: block; }
+.avviso strong { font-weight: 600; }
+input[type=text], textarea, select { width: 100%; border: 1.5px solid var(--bordo); border-radius: 12px; padding: 14px 15px; font-family: 'DM Sans', sans-serif; font-size: 16px; color: var(--testo); background: var(--bg); outline: none; transition: border-color 0.2s, background 0.2s; -webkit-appearance: none; }
+input[type=text]:focus, textarea:focus { border-color: var(--verde); background: white; }
+textarea { resize: none; min-height: 72px; }
+.sede-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.sede-btn { background: var(--bg); border: 2px solid var(--bordo); border-radius: 14px; padding: 20px 10px 16px; text-align: center; cursor: pointer; font-family: 'Sora', sans-serif; font-size: 15px; font-weight: 600; color: var(--testo2); transition: all 0.18s; position: relative; }
+.sede-btn .icon { font-size: 32px; display: block; margin-bottom: 8px; }
+.sede-btn.attivo { border-color: var(--verde); background: var(--verde-bg); color: var(--verde); }
+.sede-btn.attivo::after { content: '✓'; position: absolute; top: 10px; right: 12px; font-size: 14px; font-weight: 700; color: var(--verde); }
+.chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { border: 1.5px solid var(--bordo); border-radius: 20px; padding: 8px 14px; font-size: 13px; cursor: pointer; background: var(--bg); color: var(--testo2); font-family: 'DM Sans', sans-serif; font-weight: 500; transition: all 0.15s; }
+.chip.attivo { background: var(--verde-bg); border-color: var(--verde); color: var(--verde); }
+.btn-invia { width: 100%; background: var(--verde); color: white; border: none; border-radius: 16px; padding: 18px; font-family: 'Sora', sans-serif; font-size: 17px; font-weight: 700; cursor: pointer; transition: opacity 0.2s, transform 0.1s; margin-top: 6px; }
+.btn-invia:active { transform: scale(0.98); }
+.btn-invia:disabled { opacity: 0.5; cursor: not-allowed; }
+.feedback { display: none; border-radius: var(--radius-sm); padding: 14px 16px; font-size: 14px; font-weight: 500; text-align: center; margin-top: 12px; }
+.feedback.ok { display: block; background: var(--verde-bg); color: var(--verde); border: 1px solid var(--verde); }
+.feedback.err { display: block; background: var(--arancio-bg); color: var(--arancio); border: 1px solid var(--arancio); }
+.persona-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--bordo); }
+.persona-item:last-child { border-bottom: none; }
+.persona-avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--verde-bg); color: var(--verde); font-family: 'Sora', sans-serif; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.persona-nome { font-weight: 500; font-size: 15px; }
+.persona-meta { font-size: 12px; color: var(--testo2); margin-top: 2px; }
+.badge-sede { margin-left: auto; flex-shrink: 0; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 20px; }
+.badge-sede.cast { background: #e0f2fe; color: #0369a1; }
+.badge-sede.vill { background: #dcfce7; color: #166534; }
+.periodo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.btn-sec { background: var(--bg); border: 1.5px solid var(--bordo); border-radius: 12px; padding: 12px 16px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; color: var(--testo); text-align: center; width: 100%; transition: all 0.15s; }
+.btn-sec:hover { border-color: var(--verde); color: var(--verde); background: var(--verde-bg); }
+.btn-danger { background: var(--arancio-bg); border: 1.5px solid #ffcba4; border-radius: 12px; padding: 12px 16px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; color: var(--arancio); text-align: center; width: 100%; transition: all 0.15s; margin-top: 10px; }
+.ntfy-box { background: #eef6ff; border: 1px solid #bfdbfe; border-radius: var(--radius-sm); padding: 16px; margin-bottom: 14px; font-size: 13px; color: #1e40af; line-height: 1.6; }
+.ntfy-box strong { font-weight: 600; }
+.ntfy-box a { color: #2563eb; }
+.data-selector { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.data-selector select { flex: 1; padding: 10px 14px; font-size: 14px; }
+.btn-oggi { background: var(--verde-bg); border: 1px solid var(--verde); color: var(--verde); border-radius: 10px; padding: 10px 14px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; font-family: 'DM Sans', sans-serif; }
+.empty { text-align: center; padding: 40px 20px; color: var(--testo2); font-size: 15px; }
+.empty .emoji { font-size: 40px; display: block; margin-bottom: 10px; }
+.stat-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--bordo); font-size: 14px; }
+.stat-row:last-child { border-bottom: none; }
+.stat-row .val { font-weight: 600; font-family: 'Sora', sans-serif; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🌞 Estate Ragazzi</h1>
+  <div class="sottotitolo">Registro presenze maggiorenni</div>
+  <div class="data-badge" id="data-badge">...</div>
+</div>
+
+<div class="nav-tabs">
+  <button class="nav-tab attivo" onclick="mostraPagina('presenza')">Presenza</button>
+  <button class="nav-tab" onclick="mostraPagina('oggi')">Oggi</button>
+  <button class="nav-tab" onclick="mostraPagina('archivio')">Archivio</button>
+  <button class="nav-tab" onclick="mostraPagina('impostazioni')">⚙️</button>
+</div>
+
+<!-- PAGINA: PRESENZA -->
+<div class="pagina attiva" id="pagina-presenza">
+  <div class="contatori-grid">
+    <div class="contatore"><div class="num" id="cnt-cast">0</div><div class="label">Castenaso</div></div>
+    <div class="contatore"><div class="num" id="cnt-vill">0</div><div class="label">Villanova</div></div>
+    <div class="contatore totale"><div class="num" id="cnt-tot">0</div><div class="label">Totale</div></div>
+  </div>
+  <div class="avviso" id="avviso-sbilancio">⚠️ <strong>Sbilanciamento:</strong> <span id="avviso-testo"></span></div>
+  <div class="card">
+    <div class="card-label">Il tuo nome</div>
+    <input type="text" id="input-nome" placeholder="Nome e cognome" autocomplete="name" />
+  </div>
+  <div class="card">
+    <div class="card-label">Sede di oggi</div>
+    <div class="sede-grid">
+      <button class="sede-btn" id="btn-cast" onclick="scegliSede('Castenaso')"><span class="icon">🏘️</span>Castenaso</button>
+      <button class="sede-btn" id="btn-vill" onclick="scegliSede('Villanova')"><span class="icon">🌳</span>Villanova</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-label">Particolarità alimentari</div>
+    <div class="chip-row">
+      <div class="chip attivo" onclick="scegliChip(this)">Nessuna</div>
+      <div class="chip" onclick="scegliChip(this)">Vegetariano</div>
+      <div class="chip" onclick="scegliChip(this)">Vegano</div>
+      <div class="chip" onclick="scegliChip(this)">Senza glutine</div>
+      <div class="chip" onclick="scegliChip(this)">Senza lattosio</div>
+      <div class="chip" onclick="scegliChip(this)">Halal</div>
+      <div class="chip" onclick="scegliChip(this)">Altro</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-label">Note (opzionale)</div>
+    <textarea id="input-note" placeholder="Allergie particolari, orario di arrivo..."></textarea>
+  </div>
+  <button class="btn-invia" onclick="invia()">Conferma presenza ✓</button>
+  <div class="feedback" id="feedback-presenza"></div>
+</div>
+
+<!-- PAGINA: OGGI -->
+<div class="pagina" id="pagina-oggi">
+  <div class="avviso" id="avviso-oggi"></div>
+  <div class="contatori-grid">
+    <div class="contatore"><div class="num" id="oggi-cast">0</div><div class="label">Castenaso</div></div>
+    <div class="contatore"><div class="num" id="oggi-vill">0</div><div class="label">Villanova</div></div>
+    <div class="contatore totale"><div class="num" id="oggi-tot">0</div><div class="label">Totale</div></div>
+  </div>
+  <div class="card" id="lista-oggi"><div class="empty"><span class="emoji">📋</span>Nessuna presenza registrata oggi</div></div>
+</div>
+
+<!-- PAGINA: ARCHIVIO -->
+<div class="pagina" id="pagina-archivio">
+  <div class="data-selector">
+    <select id="sel-giorno" onchange="caricaGiorno()"></select>
+    <button class="btn-oggi" onclick="tornAOggi()">Oggi</button>
+  </div>
+  <div class="contatori-grid">
+    <div class="contatore"><div class="num" id="arch-cast">—</div><div class="label">Castenaso</div></div>
+    <div class="contatore"><div class="num" id="arch-vill">—</div><div class="label">Villanova</div></div>
+    <div class="contatore totale"><div class="num" id="arch-tot">—</div><div class="label">Totale</div></div>
+  </div>
+  <div class="card" id="lista-archivio"><div class="empty"><span class="emoji">📅</span>Seleziona un giorno</div></div>
+  <div class="card" style="margin-top:14px">
+    <div class="card-label">Particolarità alimentari</div>
+    <div id="stat-particolarita"><div class="empty" style="padding:16px 0">Nessun dato</div></div>
+  </div>
+</div>
+
+<!-- PAGINA: IMPOSTAZIONI -->
+<div class="pagina" id="pagina-impostazioni">
+  <div class="card">
+    <div class="card-label">Notifiche sbilancio (ntfy.sh)</div>
+    <div class="ntfy-box">
+      <strong>Come configurare ntfy:</strong><br>
+      1. Installa <a href="https://ntfy.sh" target="_blank">l'app ntfy</a> (Android/iOS, gratuita)<br>
+      2. Scegli un nome topic qui sotto (es. <em>estate-ragazzi-2025</em>)<br>
+      3. Nell'app ntfy aggiungi una subscription con lo stesso nome<br>
+      4. Ricevi notifica push quando le sedi sono sbilanciate
+    </div>
+    <div class="card-label">Il tuo topic ntfy</div>
+    <input type="text" id="input-topic" placeholder="es. estate-ragazzi-2025" />
+    <div style="margin-top:12px">
+      <div class="card-label">Soglia sbilancio (n. persone di differenza)</div>
+      <input type="text" id="input-soglia" placeholder="3" style="margin-top:4px" />
+    </div>
+    <button class="btn-sec" style="margin-top:12px" onclick="salvaImpostazioni()">Salva impostazioni</button>
+    <div class="feedback" id="feedback-settings" style="margin-top:10px"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Periodo Estate Ragazzi</div>
+    <div style="font-size:13px; color:var(--testo2); margin-bottom:12px">Imposta le date per popolare l'archivio con tutti i giorni</div>
+    <div class="periodo-grid">
+      <div><div class="card-label">Data inizio</div><input type="text" id="input-inizio" placeholder="es. 16/06" /></div>
+      <div><div class="card-label">Data fine</div><input type="text" id="input-fine" placeholder="es. 28/06" /></div>
+    </div>
+    <button class="btn-sec" style="margin-top:12px" onclick="impostaPeriodo()">Imposta periodo</button>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Esporta dati</div>
+    <button class="btn-sec" onclick="esportaCSV()">Scarica CSV completo</button>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Zona pericolo</div>
+    <button class="btn-danger" onclick="resettaOggi()">Cancella presenze di oggi</button>
+    <button class="btn-danger" style="margin-top:8px" onclick="resettaTutto()">Cancella tutti i dati</button>
+  </div>
+</div>
+
+<script>
+const KEY_DATI='er_presenze', KEY_TOPIC='er_ntfy_topic', KEY_SOGLIA='er_soglia', KEY_PERIODO='er_periodo';
+let sedeSelezionata=null, particolaritaSel='Nessuna';
+
+function getDati(){try{return JSON.parse(localStorage.getItem(KEY_DATI)||'{}')}catch{return{}}}
+function salvaDati(d){localStorage.setItem(KEY_DATI,JSON.stringify(d))}
+function getOggiLabel(){const d=new Date();return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')}
+function getDateCompleta(){const d=new Date(),g=['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'],m=['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];return g[d.getDay()]+' '+d.getDate()+' '+m[d.getMonth()]}
+
+window.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('data-badge').textContent=getDateCompleta();
+  aggiornaContatori();
+  caricaImpostazioni();
+  popola_sel_giorno();
+});
+
+function mostraPagina(id){
+  document.querySelectorAll('.pagina').forEach(p=>p.classList.remove('attiva'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('attivo'));
+  document.getElementById('pagina-'+id).classList.add('attiva');
+  const ids=['presenza','oggi','archivio','impostazioni'];
+  document.querySelectorAll('.nav-tab').forEach((t,i)=>{if(ids[i]===id)t.classList.add('attivo')});
+  if(id==='oggi')aggiornaOggi();
+  if(id==='archivio'){popola_sel_giorno();caricaGiorno();}
+}
+
+function scegliSede(sede){
+  sedeSelezionata=sede;
+  document.getElementById('btn-cast').classList.toggle('attivo',sede==='Castenaso');
+  document.getElementById('btn-vill').classList.toggle('attivo',sede==='Villanova');
+}
+function scegliChip(el){
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('attivo'));
+  el.classList.add('attivo');
+  particolaritaSel=el.textContent.trim();
+}
+
+function invia(){
+  const nome=document.getElementById('input-nome').value.trim();
+  const note=document.getElementById('input-note').value.trim();
+  if(!nome){mostraFeedback('presenza','Inserisci il tuo nome!',false);return}
+  if(!sedeSelezionata){mostraFeedback('presenza','Scegli una sede!',false);return}
+  const oggi=getOggiLabel();
+  const dati=getDati();
+  if(!dati[oggi])dati[oggi]=[];
+  if(dati[oggi].find(p=>p.nome.toLowerCase()===nome.toLowerCase())){
+    mostraFeedback('presenza',nome+' ha già segnato la presenza oggi!',false);return
+  }
+  dati[oggi].push({nome,sede:sedeSelezionata,particolarita:particolaritaSel,note,ora:new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})});
+  salvaDati(dati);
+  const {cast,vill}=contaGiorno(dati,oggi);
+  aggiornaContatori();
+  mostraFeedback('presenza','✅ Registrato! Castenaso: '+cast+' — Villanova: '+vill,true);
+  document.getElementById('input-nome').value='';
+  document.getElementById('input-note').value='';
+  sedeSelezionata=null;
+  document.getElementById('btn-cast').classList.remove('attivo');
+  document.getElementById('btn-vill').classList.remove('attivo');
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('attivo'));
+  document.querySelector('.chip').classList.add('attivo');
+  particolaritaSel='Nessuna';
+  controllaSbilancio(cast,vill,oggi);
+}
+
+function contaGiorno(dati,label){
+  const e=dati[label]||[];
+  return{cast:e.filter(p=>p.sede==='Castenaso').length,vill:e.filter(p=>p.sede==='Villanova').length,tot:e.length};
+}
+
+function aggiornaContatori(){
+  const dati=getDati(),oggi=getOggiLabel();
+  const {cast,vill,tot}=contaGiorno(dati,oggi);
+  document.getElementById('cnt-cast').textContent=cast;
+  document.getElementById('cnt-vill').textContent=vill;
+  document.getElementById('cnt-tot').textContent=tot;
+  const diff=Math.abs(cast-vill),soglia=parseInt(localStorage.getItem(KEY_SOGLIA)||'3');
+  const avviso=document.getElementById('avviso-sbilancio');
+  if(tot>0&&diff>=soglia){
+    const mag=cast>vill?'Castenaso':'Villanova',min=cast>vill?'Villanova':'Castenaso';
+    document.getElementById('avviso-testo').textContent=mag+' ha '+diff+' persone in più di '+min+'. Riequilibra!';
+    avviso.classList.add('visibile');
+  } else {avviso.classList.remove('visibile');}
+}
+
+function aggiornaOggi(){
+  const dati=getDati(),oggi=getOggiLabel();
+  const {cast,vill,tot}=contaGiorno(dati,oggi);
+  document.getElementById('oggi-cast').textContent=cast;
+  document.getElementById('oggi-vill').textContent=vill;
+  document.getElementById('oggi-tot').textContent=tot;
+  const avviso=document.getElementById('avviso-oggi'),soglia=parseInt(localStorage.getItem(KEY_SOGLIA)||'3'),diff=Math.abs(cast-vill);
+  if(tot>0&&diff>=soglia){const mag=cast>vill?'Castenaso':'Villanova';avviso.innerHTML='⚠️ <strong>Sbilancio:</strong> '+mag+' ha '+diff+' persone in più!';avviso.classList.add('visibile');}
+  else{avviso.classList.remove('visibile');}
+  renderLista(dati[oggi]||[],'lista-oggi');
+}
+
+function renderLista(elenco,id){
+  const el=document.getElementById(id);
+  if(!elenco.length){el.innerHTML='<div class="empty"><span class="emoji">📋</span>Nessuna presenza registrata</div>';return}
+  el.innerHTML=elenco.map(p=>`<div class="persona-item"><div class="persona-avatar">${iniziali(p.nome)}</div><div><div class="persona-nome">${p.nome}</div><div class="persona-meta">${p.particolarita!=='Nessuna'?p.particolarita:''}${p.note?' · '+p.note:''}${p.ora?' · '+p.ora:''}</div></div><div class="badge-sede ${p.sede==='Castenaso'?'cast':'vill'}">${p.sede}</div></div>`).join('');
+}
+
+function iniziali(nome){return nome.split(' ').slice(0,2).map(w=>w[0]?.toUpperCase()||'').join('')}
+
+function popola_sel_giorno(){
+  const sel=document.getElementById('sel-giorno'),dati=getDati(),oggi=getOggiLabel();
+  const periodo=JSON.parse(localStorage.getItem(KEY_PERIODO)||'null');
+  let giorni=new Set(Object.keys(dati));
+  if(periodo){let cur=parseData(periodo.inizio);const fine=parseData(periodo.fine);if(cur&&fine){while(cur<=fine){giorni.add(formatData(cur));cur.setDate(cur.getDate()+1);}}}
+  giorni.add(oggi);
+  const arr=Array.from(giorni).sort((a,b)=>{const[da,ma]=a.split('/').map(Number),[db,mb]=b.split('/').map(Number);return ma!==mb?ma-mb:da-db;});
+  sel.innerHTML=arr.map(g=>`<option value="${g}" ${g===oggi?'selected':''}>${g===oggi?g+' (oggi)':g}</option>`).join('');
+  caricaGiorno();
+}
+
+function tornAOggi(){document.getElementById('sel-giorno').value=getOggiLabel();caricaGiorno();}
+
+function caricaGiorno(){
+  const g=document.getElementById('sel-giorno').value;if(!g)return;
+  const dati=getDati(),elenco=dati[g]||[];
+  const cast=elenco.filter(p=>p.sede==='Castenaso').length,vill=elenco.filter(p=>p.sede==='Villanova').length;
+  document.getElementById('arch-cast').textContent=cast;
+  document.getElementById('arch-vill').textContent=vill;
+  document.getElementById('arch-tot').textContent=elenco.length;
+  renderLista(elenco,'lista-archivio');
+  const el=document.getElementById('stat-particolarita');
+  if(!elenco.length){el.innerHTML='<div class="empty" style="padding:16px 0">Nessun dato</div>';return;}
+  const c={};elenco.forEach(p=>{c[p.particolarita]=(c[p.particolarita]||0)+1;});
+  el.innerHTML=Object.entries(c).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="stat-row"><span>${k}</span><span class="val">${v}</span></div>`).join('');
+}
+
+async function controllaSbilancio(cast,vill,label){
+  const soglia=parseInt(localStorage.getItem(KEY_SOGLIA)||'3'),diff=Math.abs(cast-vill);
+  if(diff<soglia)return;
+  const topic=localStorage.getItem(KEY_TOPIC);if(!topic)return;
+  const mag=cast>vill?'Castenaso':'Villanova',min=cast>vill?'Villanova':'Castenaso';
+  try{await fetch('https://ntfy.sh/'+topic,{method:'POST',headers:{'Title':'Estate Ragazzi — Sbilancio '+label,'Priority':'high','Tags':'warning'},body:mag+' ha '+diff+' operatori in più di '+min+' ('+cast+' vs '+vill+'). Riequilibra!'});}catch(e){console.warn('ntfy',e);}
+}
+
+function caricaImpostazioni(){
+  document.getElementById('input-topic').value=localStorage.getItem(KEY_TOPIC)||'';
+  document.getElementById('input-soglia').value=localStorage.getItem(KEY_SOGLIA)||'3';
+  const p=JSON.parse(localStorage.getItem(KEY_PERIODO)||'null');
+  if(p){document.getElementById('input-inizio').value=p.inizio;document.getElementById('input-fine').value=p.fine;}
+}
+
+function salvaImpostazioni(){
+  const topic=document.getElementById('input-topic').value.trim();
+  const soglia=document.getElementById('input-soglia').value.trim()||'3';
+  if(!topic){mostraFeedback('settings','Inserisci un topic ntfy!',false);return;}
+  localStorage.setItem(KEY_TOPIC,topic);localStorage.setItem(KEY_SOGLIA,soglia);
+  mostraFeedback('settings','✅ Impostazioni salvate!',true);
+  aggiornaContatori();
+}
+
+function impostaPeriodo(){
+  const inizio=document.getElementById('input-inizio').value.trim(),fine=document.getElementById('input-fine').value.trim();
+  if(!inizio||!fine){alert('Inserisci entrambe le date nel formato GG/MM');return;}
+  localStorage.setItem(KEY_PERIODO,JSON.stringify({inizio,fine}));
+  alert('Periodo impostato!');popola_sel_giorno();
+}
+
+function esportaCSV(){
+  const dati=getDati(),righe=[['Data','Nome','Sede','Particolarità','Note','Ora']];
+  Object.entries(dati).sort().forEach(([data,persone])=>{persone.forEach(p=>righe.push([data,p.nome,p.sede,p.particolarita,p.note||'',p.ora||'']));});
+  const csv=righe.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download='presenze_estate_ragazzi.csv';a.click();URL.revokeObjectURL(url);
+}
+
+function resettaOggi(){if(!confirm('Cancellare le presenze di oggi?'))return;const dati=getDati();delete dati[getOggiLabel()];salvaDati(dati);aggiornaContatori();alert('Presenze di oggi cancellate.');}
+function resettaTutto(){if(!confirm('Cancellare TUTTI i dati?'))return;localStorage.removeItem(KEY_DATI);aggiornaContatori();alert('Tutti i dati cancellati.');}
+
+function mostraFeedback(id,msg,ok){
+  const el=document.getElementById('feedback-'+id);
+  el.textContent=msg;el.className='feedback '+(ok?'ok':'err');
+  setTimeout(()=>{el.className='feedback';},4000);
+}
+function parseData(str){const[g,m]=str.split('/').map(Number);if(!g||!m)return null;return new Date(2025,m-1,g);}
+function formatData(d){return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');}
+</script>
+</body>
+</html>
