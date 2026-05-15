@@ -239,8 +239,6 @@ import {
   getDocs,
   deleteDoc,
   writeBatch,
-  query,
-  orderBy,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
 
@@ -270,8 +268,7 @@ function docIdPresenza(dataISO,nome){return dataISO+'_'+normalizzaNome(nome)}
 
 async function caricaDatiFirestore(){
   try{
-    const q=query(collection(db,COL_PRESENZE),orderBy('dataISO','asc'),orderBy('ora','asc'));
-    const snap=await getDocs(q);
+    const snap=await getDocs(collection(db,COL_PRESENZE));
     const dati={};
     snap.forEach(documento=>{
       const p=documento.data();
@@ -285,6 +282,9 @@ async function caricaDatiFirestore(){
         note:p.note||'',
         ora:p.ora||''
       });
+    });
+    Object.keys(dati).forEach(label=>{
+      dati[label].sort((a,b)=>(a.ora||'').localeCompare(b.ora||''));
     });
     datiCache=dati;
     return dati;
