@@ -366,7 +366,11 @@ async function controllaSbilancio(cast,vill,label){
   if(diff<soglia)return;
   const topic=localStorage.getItem(KEY_TOPIC);if(!topic)return;
   const mag=cast>vill?'Castenaso':'Villanova',min=cast>vill?'Villanova':'Castenaso';
-  try{await fetch('https://ntfy.sh/'+topic,{method:'POST',headers:{'Title':'Estate Ragazzi — Sbilancio '+label,'Priority':'high','Tags':'warning'},body:mag+' ha '+diff+' operatori in più di '+min+' ('+cast+' vs '+vill+'). Riequilibra!'});}catch(e){console.warn('ntfy',e);}
+  try{
+    const title=encodeURIComponent('Estate Ragazzi - Sbilancio '+label);
+    const body=mag+' ha '+diff+' operatori in piu di '+min+' ('+cast+' vs '+vill+'). Riequilibra!';
+    await fetch('https://ntfy.sh/'+topic,{method:'POST',headers:{'Title':title,'Priority':'high','Tags':'warning','Content-Type':'text/plain'},body});
+  }catch(e){console.warn('ntfy',e);}
 }
 
 function caricaImpostazioni(){
