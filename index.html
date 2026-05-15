@@ -236,8 +236,8 @@ import {
   collection,
   doc,
   setDoc,
+  getDoc,
   getDocs,
-  deleteDoc,
   writeBatch,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
@@ -254,17 +254,72 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const COL_PRESENZE = 'presenze';
+const COL_CONFIG = 'config';
+const DOC_IMPOSTAZIONI = 'impostazioni';
 
 const KEY_TOPIC='er_ntfy_topic', KEY_SOGLIA='er_soglia', KEY_PERIODO='er_periodo';
 const PIN_CORRETTO='0908', KEY_AUTH='er_auth';
 let sedeSelezionata=null, particolaritaSel='Nessuna', paginaRichiesta=null;
 let datiCache = {};
+let impostazioniCache = {topic:'', soglia:'3', periodo:null};
 
 function normalizzaNome(nome){return nome.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')}
 function getOggiLabel(){const d=new Date();return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')}
 function getOggiISO(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function getDateCompleta(){const d=new Date(),g=['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'],m=['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];return g[d.getDay()]+' '+d.getDate()+' '+m[d.getMonth()]}
 function docIdPresenza(dataISO,nome){return dataISO+'_'+normalizzaNome(nome)}
+
+async function caricaImpostazioniFirestore(){
+  try{
+    const snap=await getDoc(doc(db,COL_CONFIG,DOC_IMPOSTAZIONI));
+    if(snap.exists()){
+      const data=snap.data();
+      impostazioniCache={
+        topic:data.topic||'',
+        soglia:String(data.soglia||'3'),
+        periodo:data.periodo||null
+      };
+      // Copia locale di appoggio: utile se Firebase non risponde per un momento.
+      localStorage.setItem(KEY_TOPIC,impostazioniCache.topic);
+      localStorage.setItem(KEY_SOGLIA,impostazioniCache.soglia);
+      if(impostazioniCache.periodo)localStorage.setItem(KEY_PERIODO,JSON.stringify(impostazioniCache.periodo));
+      else localStorage.removeItem(KEY_PERIODO);
+      return impostazioniCache;
+    }
+  }catch(e){
+    console.error('Errore caricamento impostazioni Firestore',e);
+  }
+  // Fallback: recupera eventuali vecchie impostazioni locali e le usa finché Firebase non è disponibile.
+  let periodo=null;
+  try{periodo=JSON.parse(localStorage.getItem(KEY_PERIODO)||'null')}catch{}
+  impostazioniCache={
+    topic:localStorage.getItem(KEY_TOPIC)||'',
+    soglia:localStorage.getItem(KEY_SOGLIA)||'3',
+    periodo
+  };
+  return impostazioniCache;
+}
+
+async function salvaImpostazioniFirestore(nuove){
+  impostazioniCache={...impostazioniCache,...nuove};
+  await setDoc(doc(db,COL_CONFIG,DOC_IMPOSTAZIONI),{
+    topic:impostazioniCache.topic||'',
+    soglia:String(impostazioniCache.soglia||'3'),
+    periodo:impostazioniCache.periodo||null,
+    updatedAt:serverTimestamp()
+  },{merge:true});
+  localStorage.setItem(KEY_TOPIC,impostazioniCache.topic||'');
+  localStorage.setItem(KEY_SOGLIA,String(impostazioniCache.soglia||'3'));
+  if(impostazioniCache.periodo)localStorage.setItem(KEY_PERIODO,JSON.stringify(impostazioniCache.periodo));
+  else localStorage.removeItem(KEY_PERIODO);
+}
+
+function getSoglia(){return parseInt(impostazioniCache.soglia||localStorage.getItem(KEY_SOGLIA)||'3')||3}
+function getTopic(){return impostazioniCache.topic||localStorage.getItem(KEY_TOPIC)||''}
+function getPeriodo(){
+  if(impostazioniCache.periodo)return impostazioniCache.periodo;
+  try{return JSON.parse(localStorage.getItem(KEY_PERIODO)||'null')}catch{return null}
+}
 
 async function caricaDatiFirestore(){
   try{
@@ -283,9 +338,7 @@ async function caricaDatiFirestore(){
         ora:p.ora||''
       });
     });
-    Object.keys(dati).forEach(label=>{
-      dati[label].sort((a,b)=>(a.ora||'').localeCompare(b.ora||''));
-    });
+    Object.values(dati).forEach(elenco=>elenco.sort((a,b)=>(a.ora||'').localeCompare(b.ora||'')));
     datiCache=dati;
     return dati;
   }catch(e){
@@ -320,7 +373,7 @@ async function eliminaTuttePresenze(){
 
 window.addEventListener('DOMContentLoaded',async()=>{
   document.getElementById('data-badge').textContent=getDateCompleta();
-  caricaImpostazioni();
+  await caricaImpostazioni();
   await aggiornaContatori();
   await popola_sel_giorno();
 });
@@ -400,7 +453,7 @@ async function aggiornaContatori(){
   document.getElementById('cnt-cast').textContent=cast;
   document.getElementById('cnt-vill').textContent=vill;
   document.getElementById('cnt-tot').textContent=tot;
-  const diff=Math.abs(cast-vill),soglia=parseInt(localStorage.getItem(KEY_SOGLIA)||'3');
+  const diff=Math.abs(cast-vill),soglia=getSoglia();
   const avviso=document.getElementById('avviso-sbilancio');
   if(tot>0&&diff>=soglia){
     const mag=cast>vill?'Castenaso':'Villanova',min=cast>vill?'Villanova':'Castenaso';
@@ -415,7 +468,7 @@ async function aggiornaOggi(){
   document.getElementById('oggi-cast').textContent=cast;
   document.getElementById('oggi-vill').textContent=vill;
   document.getElementById('oggi-tot').textContent=tot;
-  const avviso=document.getElementById('avviso-oggi'),soglia=parseInt(localStorage.getItem(KEY_SOGLIA)||'3'),diff=Math.abs(cast-vill);
+  const avviso=document.getElementById('avviso-oggi'),soglia=getSoglia(),diff=Math.abs(cast-vill);
   if(tot>0&&diff>=soglia){const mag=cast>vill?'Castenaso':'Villanova';avviso.innerHTML='⚠️ <strong>Sbilancio:</strong> '+mag+' ha '+diff+' persone in più!';avviso.classList.add('visibile');}
   else{avviso.classList.remove('visibile');}
   renderLista(dati[oggi]||[],'lista-oggi');
@@ -432,7 +485,7 @@ function iniziali(nome){return nome.split(' ').slice(0,2).map(w=>w[0]?.toUpperCa
 
 window.popola_sel_giorno=async function(){
   const sel=document.getElementById('sel-giorno'),dati=await caricaDatiFirestore(),oggi=getOggiLabel();
-  const periodo=JSON.parse(localStorage.getItem(KEY_PERIODO)||'null');
+  const periodo=getPeriodo();
   let giorni=new Set(Object.keys(dati));
   if(periodo){let cur=parseData(periodo.inizio);const fine=parseData(periodo.fine);if(cur&&fine){while(cur<=fine){giorni.add(formatData(cur));cur.setDate(cur.getDate()+1);}}}
   giorni.add(oggi);
@@ -458,9 +511,9 @@ window.caricaGiorno=async function(){
 }
 
 async function controllaSbilancio(cast,vill,label){
-  const soglia=parseInt(localStorage.getItem(KEY_SOGLIA)||'3'),diff=Math.abs(cast-vill);
+  const soglia=getSoglia(),diff=Math.abs(cast-vill);
   if(diff<soglia)return;
-  const topic=localStorage.getItem(KEY_TOPIC);if(!topic)return;
+  const topic=getTopic();if(!topic)return;
   const mag=cast>vill?'Castenaso':'Villanova',min=cast>vill?'Villanova':'Castenaso';
   try{
     const title=encodeURIComponent('Estate Ragazzi - Sbilancio '+label);
@@ -469,27 +522,41 @@ async function controllaSbilancio(cast,vill,label){
   }catch(e){console.warn('ntfy',e);}
 }
 
-function caricaImpostazioni(){
-  document.getElementById('input-topic').value=localStorage.getItem(KEY_TOPIC)||'';
-  document.getElementById('input-soglia').value=localStorage.getItem(KEY_SOGLIA)||'3';
-  const p=JSON.parse(localStorage.getItem(KEY_PERIODO)||'null');
-  if(p){document.getElementById('input-inizio').value=p.inizio;document.getElementById('input-fine').value=p.fine;}
+async function caricaImpostazioni(){
+  const imp=await caricaImpostazioniFirestore();
+  document.getElementById('input-topic').value=imp.topic||'';
+  document.getElementById('input-soglia').value=imp.soglia||'3';
+  if(imp.periodo){
+    document.getElementById('input-inizio').value=imp.periodo.inizio||'';
+    document.getElementById('input-fine').value=imp.periodo.fine||'';
+  }
 }
 
-window.salvaImpostazioni=function(){
+window.salvaImpostazioni=async function(){
   const topic=document.getElementById('input-topic').value.trim();
   const soglia=document.getElementById('input-soglia').value.trim()||'3';
   if(!topic){mostraFeedback('settings','Inserisci un topic ntfy!',false);return;}
-  localStorage.setItem(KEY_TOPIC,topic);localStorage.setItem(KEY_SOGLIA,soglia);
-  mostraFeedback('settings','✅ Impostazioni salvate!',true);
-  aggiornaContatori();
+  try{
+    await salvaImpostazioniFirestore({topic,soglia});
+    mostraFeedback('settings','✅ Impostazioni salvate su Firebase!',true);
+    await aggiornaContatori();
+  }catch(e){
+    console.error(e);
+    mostraFeedback('settings','Errore salvataggio impostazioni su Firebase.',false);
+  }
 }
 
 window.impostaPeriodo=async function(){
   const inizio=document.getElementById('input-inizio').value.trim(),fine=document.getElementById('input-fine').value.trim();
   if(!inizio||!fine){alert('Inserisci entrambe le date nel formato GG/MM');return;}
-  localStorage.setItem(KEY_PERIODO,JSON.stringify({inizio,fine}));
-  alert('Periodo impostato!');await popola_sel_giorno();
+  try{
+    await salvaImpostazioniFirestore({periodo:{inizio,fine}});
+    alert('Periodo salvato su Firebase!');
+    await popola_sel_giorno();
+  }catch(e){
+    console.error(e);
+    alert('Errore salvataggio periodo su Firebase.');
+  }
 }
 
 window.esportaCSV=async function(){
