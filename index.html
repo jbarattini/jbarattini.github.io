@@ -97,8 +97,8 @@ textarea { resize: none; min-height: 72px; }
 <div class="nav-tabs">
   <button class="nav-tab attivo" onclick="mostraPagina('presenza')">Presenza</button>
   <button class="nav-tab" onclick="mostraPagina('oggi')">Oggi</button>
-  <button class="nav-tab" onclick="mostraPagina('archivio')">Archivio</button>
-  <button class="nav-tab" onclick="mostraPagina('impostazioni')">⚙️</button>
+  <button class="nav-tab" onclick="richiediPin('archivio')">Archivio 🔒</button>
+  <button class="nav-tab" onclick="richiediPin('impostazioni')">⚙️ 🔒</button>
 </div>
 
 <!-- PAGINA: PRESENZA -->
@@ -212,9 +212,27 @@ textarea { resize: none; min-height: 72px; }
   </div>
 </div>
 
+<!-- OVERLAY PIN -->
+<div id="pin-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:100;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:22px;padding:32px 28px;width:88%;max-width:340px;text-align:center;">
+    <div style="font-size:36px;margin-bottom:8px;">&#128272;</div>
+    <div style="font-family:Sora,sans-serif;font-size:18px;font-weight:700;color:#1c1c1e;margin-bottom:6px;">Area riservata</div>
+    <div style="font-size:14px;color:#6b7280;margin-bottom:22px;">Inserisci il PIN per continuare</div>
+    <input type="password" id="pin-input" inputmode="numeric" maxlength="6" placeholder="&bull;&bull;&bull;&bull;"
+      style="width:100%;border:2px solid #e5e7eb;border-radius:12px;padding:14px;font-size:22px;text-align:center;letter-spacing:8px;font-family:Sora,sans-serif;outline:none;"
+      onkeydown="if(event.key==='Enter')verificaPin()" oninput="document.getElementById('pin-err').style.display='none'" />
+    <div id="pin-err" style="display:none;color:#d4530a;font-size:13px;margin-top:8px;">PIN errato. Riprova.</div>
+    <div style="display:flex;gap:10px;margin-top:18px;">
+      <button onclick="chiudiPin()" style="flex:1;background:#f0f4f2;border:none;border-radius:12px;padding:13px;font-size:15px;font-family:DM Sans,sans-serif;cursor:pointer;color:#6b7280;">Annulla</button>
+      <button onclick="verificaPin()" style="flex:1;background:#1a7a4a;border:none;border-radius:12px;padding:13px;font-size:15px;font-family:Sora,sans-serif;font-weight:700;cursor:pointer;color:#fff;">Entra</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const KEY_DATI='er_presenze', KEY_TOPIC='er_ntfy_topic', KEY_SOGLIA='er_soglia', KEY_PERIODO='er_periodo';
-let sedeSelezionata=null, particolaritaSel='Nessuna';
+const PIN_CORRETTO='0908', KEY_AUTH='er_auth';
+let sedeSelezionata=null, particolaritaSel='Nessuna', paginaRichiesta=null;
 
 function getDati(){try{return JSON.parse(localStorage.getItem(KEY_DATI)||'{}')}catch{return{}}}
 function salvaDati(d){localStorage.setItem(KEY_DATI,JSON.stringify(d))}
@@ -390,6 +408,37 @@ function mostraFeedback(id,msg,ok){
   el.textContent=msg;el.className='feedback '+(ok?'ok':'err');
   setTimeout(()=>{el.className='feedback';},4000);
 }
+
+function isAutenticato(){return sessionStorage.getItem(KEY_AUTH)==='1';}
+
+function richiediPin(pagina){
+  if(isAutenticato()){mostraPagina(pagina);return;}
+  paginaRichiesta=pagina;
+  document.getElementById('pin-input').value='';
+  document.getElementById('pin-err').style.display='none';
+  const ov=document.getElementById('pin-overlay');
+  ov.style.display='flex';
+  setTimeout(()=>document.getElementById('pin-input').focus(),100);
+}
+
+function verificaPin(){
+  const val=document.getElementById('pin-input').value.trim();
+  if(val===PIN_CORRETTO){
+    sessionStorage.setItem(KEY_AUTH,'1');
+    chiudiPin();
+    if(paginaRichiesta)mostraPagina(paginaRichiesta);
+  } else {
+    document.getElementById('pin-err').style.display='block';
+    document.getElementById('pin-input').value='';
+    document.getElementById('pin-input').focus();
+  }
+}
+
+function chiudiPin(){
+  document.getElementById('pin-overlay').style.display='none';
+  paginaRichiesta=null;
+}
+
 function parseData(str){const[g,m]=str.split('/').map(Number);if(!g||!m)return null;return new Date(2025,m-1,g);}
 function formatData(d){return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');}
 </script>
